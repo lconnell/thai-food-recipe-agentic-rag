@@ -1,3 +1,5 @@
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/c851dd2aab004f22b7add6564201854a)](https://app.codacy.com/gh/lconnell/kubernetes-playground/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
+
 ##### Build
 ``` bash
 docker build -t agentic_rag_app --no-cache .
