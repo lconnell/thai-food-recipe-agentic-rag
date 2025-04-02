@@ -10,8 +10,14 @@ docker run --env-file .env -p 8000:8000 -v $(pwd)/data:/app/data agentic_rag_app
 
 ##### Health Check
 ``` bash
-curl http://localhost:8000/health
-docker inspect --format='{{.State.Health.Status}}' $(docker ps -q --filter ancestor=agentic_rag_app)
+curl -X GET "http://localhost:8000/health"
+```
+
+##### Recipe Query
+``` bash
+curl -X POST "http://localhost:8000/query" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "best Thai curry recipe"}'
 ```
 
 ##### Kubernetes
