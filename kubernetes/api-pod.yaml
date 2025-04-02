@@ -1,0 +1,87 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: thai-recipes-pv
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
+  hostPath:
+    path: "/Users/lconnell/Development/agentic-rag/data"
+    type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: thai-recipes-pvc
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: manual
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agentic-rag-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: agentic-rag
+  template:
+    metadata:
+      labels:
+        app: agentic-rag
+    spec:
+      containers:
+      - name: agentic-rag
+        image: agentic_rag_app:latest
+        ports:
+        - containerPort: 8000
+        volumeMounts:
+        - name: thai-recipes
+          mountPath: /app/data
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 15
+          periodSeconds: 30
+          timeoutSeconds: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 3
+        resources:
+          requests:
+            cpu: "250m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+      volumes:
+      - name: thai-recipes
+        persistentVolumeClaim:
+          claimName: thai-recipes-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: agentic-rag-service
+spec:
+  selector:
+    app: agentic-rag
+  ports:
+  - protocol: TCP
+    port: 8000
+    targetPort: 8000
+  type: ClusterIP
