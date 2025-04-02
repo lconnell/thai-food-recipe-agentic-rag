@@ -25,10 +25,6 @@ class QueryResponse(BaseModel):
     content: str
     recipes: list[Recipe]
 
-# Debug lance
-import lance
-logger.info(f"Lance version: {lance.__version__}")
-
 # Initialize Agent
 try:
     agent = Agent(
