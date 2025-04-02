@@ -18,7 +18,8 @@ docker inspect --format='{{.State.Health.Status}}' $(docker ps -q --filter ances
 ``` bash
 kubectl create pv thai-recipes-pv \
   --capacity=storage=1Gi \
-  --access-modes=ReadWriteMany \
-  --nfs-server=nfs-server.example.com \
-  --nfs-path=/exports/thai-recipes
-  ```
+  --access-modes=ReadWriteOnce \
+  --host-path=/Users/lconnell/Development/thai-food-recipe-agentic-rag/data \
+  --dry-run=client -o yaml > thai-recipes-pv.yaml
+kubectl apply -f thai-recipes-pv.yaml
+```
