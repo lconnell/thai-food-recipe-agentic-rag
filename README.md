@@ -1,4 +1,4 @@
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/c851dd2aab004f22b7add6564201854a)](https://app.codacy.com/gh/lconnell/kubernetes-playground/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/7e04b9743f2b4eba9d3a48e53f8e6391)](https://app.codacy.com/gh/lconnell/thai-food-recipe-agentic-rag/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 
 ##### Build
 ``` bash
