@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   app:
-    image: agentic_rag_app
+    image: langchain_rag_app
     build: .
     ports:
       - "8000:8000"
