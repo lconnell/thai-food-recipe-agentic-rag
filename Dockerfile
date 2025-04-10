@@ -9,7 +9,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     curl \
     build-essential \
-    && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
+    ## && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
     && rm -rf /var/lib/apt/lists/*
 ENV PATH="/root/.cargo/bin:${PATH}"
 
@@ -25,7 +25,7 @@ FROM python:3.11-slim AS runtime
 # Add metadata
 LABEL maintainer="Lee Connell <lee.a.connell@gmail.com>"
 LABEL version="1.0"
-LABEL description="Agentic RAG FastAPI Application"
+LABEL description="Langchain RAG FastAPI Application"
 
 # Set working directory
 WORKDIR /app

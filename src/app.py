@@ -1,95 +1,72 @@
-import asyncio
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-import logging
-from parser import parse_recipes_from_tools
+import pandas as pd
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_community.vectorstores import FAISS
+from langchain_core.documents import Document
+import uvicorn
+import os
 
-# Agno imports
-from agno.agent import Agent
-from agno.models.openai import OpenAIChat
-from agno.embedder.openai import OpenAIEmbedder
-from agno.tools.duckduckgo import DuckDuckGoTools
-from agno.knowledge.csv import CSVKnowledgeBase
-from agno.vectordb.lancedb import LanceDb, SearchType
+# Initialize FastAPI app
+app = FastAPI(title="Camping Gear RAG API")
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-logger = logging.getLogger(__name__)
+# Define the path to the CSV file
+CSV_FILE_PATH = os.path.join("data", "gear.csv")
 
-# Response models
-class Recipe(BaseModel):
-    name: str
-    description: str
-    url: str
+# Load and process CSV file
+def load_csv_data(file_path: str):
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"CSV file not found at: {file_path}")
+    try:
+        df = pd.read_csv(file_path)
+        # Convert rows to Document objects for LangChain
+        documents = [
+            Document(
+                page_content=f"{row['name']}: {row['description']}",
+                metadata={"category": row["category"], "price": row["price"]}
+            )
+            for _, row in df.iterrows()
+        ]
+        return documents
+    except Exception as e:
+        raise Exception(f"Error loading CSV: {str(e)}")
 
-class QueryResponse(BaseModel):
-    content: str
-    recipes: list[Recipe]
+# Initialize embeddings and vector store
+embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+documents = load_csv_data(CSV_FILE_PATH)
+vector_store = FAISS.from_documents(documents, embeddings)
 
-# Initialize Agent
-try:
-    agent = Agent(
-        model=OpenAIChat(id="gpt-4o"),
-        description="You are a Thai cuisine expert!",
-        instructions=[
-            "Search your knowledge base for Thai recipes.",
-            "If the question is better suited for the web, search the web to fill in gaps.",
-            "Prefer the information in your knowledge base over the web results."
-        ],
-        knowledge=CSVKnowledgeBase(
-            path="data/ThaiRecipes.csv",
-            vector_db=LanceDb(
-                uri="data/lancedb",
-                table_name="recipes",
-                search_type=SearchType.hybrid,
-                embedder=OpenAIEmbedder(id="text-embedding-3-small"),
-            ),
-        ),
-        tools=[DuckDuckGoTools()],
-        show_tool_calls=True,
-        markdown=True
-    )
-    if agent.knowledge is not None:
-        agent.knowledge.load()
-except Exception as e:
-    logger.error(f"Agent initialization failed: {str(e)}", exc_info=True)
-    raise
-
-app = FastAPI()
-
+# Pydantic model for request body
 class QueryRequest(BaseModel):
     query: str
+    top_k: int = 2  # Number of results to return
 
+# Health check endpoint
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
 
-@app.post("/query", response_model=QueryResponse)
-async def query_agent(request: QueryRequest):
+# Query endpoint
+@app.post("/query")
+async def query_gear(request: QueryRequest):
     try:
-        if not request.query.strip():
-            raise ValueError("Query cannot be empty")
+        # Perform similarity search
+        results = vector_store.similarity_search(request.query, k=request.top_k)
         
-        logger.info(f"Processing query: {request.query}")
-        run_response = await asyncio.to_thread(agent.run, request.query, stream=False)
-        logger.info(f"Full RunResponse tools: {run_response.tools}")
-        
-        # Parse recipes from tools data (returns dicts)
-        recipes = parse_recipes_from_tools(run_response)
-        response_data = QueryResponse(
-            content=run_response.content,
-            recipes=recipes  # Pydantic will handle dict-to-model conversion
-        )
-        
-        logger.info("Query processed successfully")
-        return response_data
-    
-    except ValueError as ve:
-        logger.error(f"Invalid query: {str(ve)}")
-        raise HTTPException(status_code=400, detail=str(ve))
+        # Format the response
+        response = [
+            {
+                "name": result.page_content.split(":")[0].strip(),
+                "description": result.page_content.split(":")[1].strip(),
+                "category": result.metadata["category"],
+                "price": result.metadata["price"]
+            }
+            for result in results
+        ]
+        return {"results": response}
     except Exception as e:
-        logger.error(f"Unexpected error: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Failed to process query: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error processing query: {str(e)}")
 
+# Run the app
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(app, host="0.0.0.0", port=8000)
