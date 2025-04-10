@@ -34,7 +34,7 @@ jobs:
       - name: Build and Push Docker Image
         run: |
           # Use repo-based image name
-          IMAGE_NAME="ghcr.io/${{ github.repository }}/thai-curry-app"
+          IMAGE_NAME="ghcr.io/${{ github.repository }}/langchain-rag"
           TIMESTAMP=$(date +%s)
           TAG="${IMAGE_NAME}:${TIMESTAMP}"
           LATEST_TAG="${IMAGE_NAME}:latest"
