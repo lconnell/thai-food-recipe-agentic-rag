@@ -27,7 +27,10 @@ curl -X POST "http://localhost:8000/query" \
 kubectl create pv langchain-rag-pv \
   --capacity=storage=1Gi \
   --access-modes=ReadWriteOnce \
-  --host-path=/Users/lconnell/Development/langchain-rag/data \
+kubectl create pv langchain-rag-pv \
+  --capacity=storage=1Gi \
+  --access-modes=ReadWriteOnce \
+  --host-path=$HOST_PATH/langchain-rag/data \
   --dry-run=client -o yaml > langchain-rag-pv.yaml
 kubectl apply -f langchain-rag-pv.yaml
 ```
