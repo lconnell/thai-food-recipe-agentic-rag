@@ -28,8 +28,12 @@ def load_csv_data(file_path: str):
             for _, row in df.iterrows()
         ]
         return documents
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=f"CSV file not found: {str(e)}")
+    except pd.errors.EmptyDataError as e:
+        raise HTTPException(status_code=400, detail=f"CSV file is empty: {str(e)}")
     except Exception as e:
-        raise Exception(f"Error loading CSV: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error loading CSV: {str(e)}")
 
 # Initialize embeddings and vector store
 embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
