@@ -27,7 +27,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}  # Your GitHub username (lconnell)
+          username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       # Build and push Docker image
@@ -35,8 +35,9 @@ jobs:
         run: |
           # Use repo-based image name
           IMAGE_NAME="ghcr.io/${{ github.repository }}/langchain-rag"
-          TIMESTAMP=$(date +%s)
-          TAG="${IMAGE_NAME}:${TIMESTAMP}"
+          SHA=${{ github.sha }}
+          SHORT_SHA=${SHA:0:7}  # Use first 7 characters of SHA for brevity
+          TAG="${IMAGE_NAME}:${SHORT_SHA}"
           LATEST_TAG="${IMAGE_NAME}:latest"
 
           # Build the image
